@@ -1,45 +1,33 @@
-"""
-Q1: Implement k-means assignment step.
-Function: kmeans_assign(points, centroids) -> list[int]
-
-For each point, return the index (0-based) of the nearest centroid by Euclidean distance.
-Break ties by choosing the smaller centroid index.
-"""
-
 from typing import List
 
-def _squared_euclidean(a: List[float], b: List[float]) -> float:
-    return sum((x - y) ** 2 for x, y in zip(a, b))
-
-def kmeans_assign(points: List[List[float]], centroids: List[List[float]]) -> List[int]:
+def standardize_columns(X: List[List[float]]) -> List[List[float]]:
     """
-    Assign each point to the nearest centroid using Euclidean distance.
-
-    Args:
-        points: List of n points, each a list of floats of dimension d.
-        centroids: List of m centroids, each a list of floats of dimension d.
-
-    Returns:
-        A list of length n where each entry is the index (0-based) of the nearest centroid.
-        Ties are broken by choosing the smaller centroid index.
+    Standardize features column-wise using population std (ddof=0).
+    For each column j: z = (x - mean_j) / std_j.
+    If std_j == 0, the entire column becomes zeros.
+    Each value rounded to 4 decimals.
     """
-    if not centroids:
-        return [ -1 for _ in points ]  # no centroids; return -1 as a sentinel
-
-    assignments: List[int] = []
-    for p in points:
-        best_idx = 0
-        best_dist = _squared_euclidean(p, centroids[0])
-        for j in range(1, len(centroids)):
-            d = _squared_euclidean(p, centroids[j])
-            # Tie-breaker: smaller index wins
-            if d < best_dist or (d == best_dist and j < best_idx):
-                best_idx, best_dist = j, d
-        assignments.append(best_idx)
-    return assignments
-
-if __name__ == "__main__":
-    # Simple sanity check
-    pts = [[0,0],[2,2],[10,10]]
-    cents = [[0,0],[5,5]]
-    print(kmeans_assign(pts, cents))  # [0,0,1]
+    if not X:
+        return []
+    n = len(X)
+    d = len(X[0]) if X[0] else 0
+    if d == 0:
+        return [[] for _ in range(n)]
+    means = [0.0] * d
+    for row in X:
+        for j, v in enumerate(row):
+            means[j] += v
+    means = [m / n for m in means]
+    variances = [0.0] * d
+    for row in X:
+        for j, v in enumerate(row):
+            dv = v - means[j]
+            variances[j] += dv * dv
+    variances = [v / n for v in variances]
+    stds = [v ** 0.5 for v in variances]
+    Z = [[0.0] * d for _ in range(n)]
+    for i in range(n):
+        for j in range(d):
+            z = 0.0 if stds[j] == 0 else (X[i][j] - means[j]) / stds[j]
+            Z[i][j] = float(f"{z:.4f}")
+    return Z
