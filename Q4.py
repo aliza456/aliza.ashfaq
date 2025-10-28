@@ -1,50 +1,23 @@
-"""
-Q4: Single epoch of binary perceptron.
-Labels are -1 or +1. For each sample (in order), if y_i*(w·x + b) <= 0, update:
-    w = w + lr*y_i*x
-    b = b + lr*y_i
-Return [w, b].
+from typing import List
 
-Function: perceptron_epoch(X, y, w, b, lr) -> [list[float], float]
-"""
-
-from typing import List, Tuple
-
-def _dot(a: List[float], b: List[float]) -> float:
-    return sum(x*y for x, y in zip(a, b))
-
-def perceptron_epoch(
-    X: List[List[float]],
-    y: List[int],
-    w: List[float],
-    b: float,
-    lr: float
-) -> Tuple[List[float], float]:
+def softmax_classify(W: List[List[float]], b: List[float], X: List[List[float]]) -> List[int]:
     """
-    Run a single perceptron epoch over the dataset in-order.
-
-    Args:
-        X: List of n samples; each is a list of floats (features).
-        y: List of n labels; each label is -1 or +1.
-        w: Current weight vector.
-        b: Current bias (float).
-        lr: Learning rate (float).
-
-    Returns:
-        (w, b) after one epoch.
+    Linear multi-class classification.
+    For each x in X, compute logits = W @ x + b and return argmax class index.
+    Break ties by choosing the smallest class index.
     """
-    w = list(w)  # copy to avoid in-place mutation surprises
-    for xi, yi in zip(X, y):
-        activation = _dot(w, xi) + b
-        if yi * activation <= 0:
-            # w = w + lr * yi * xi
-            for j in range(len(w)):
-                w[j] += lr * yi * xi[j]
-            b += lr * yi
-    return w, b
-
-if __name__ == "__main__":
-    X = [[1,1], [2,2], [-1,-1]]
-    y = [1, 1, -1]
-    w, b = [0.0, 0.0], 0.0
-    print(perceptron_epoch(X, y, w, b, 1.0))
+    if not X:
+        return []
+    C = len(W)
+    preds: List[int] = []
+    for x in X:
+        best_c = 0
+        # compute logit for class 0
+        best_val = sum(W[0][j] * x[j] for j in range(len(x))) + (b[0] if b else 0.0)
+        for c in range(1, C):
+            val = sum(W[c][j] * x[j] for j in range(len(x))) + (b[c] if b else 0.0)
+            if val > best_val or (val == best_val and c < best_c):
+                best_c = c
+                best_val = val
+        preds.append(best_c)
+    return preds
