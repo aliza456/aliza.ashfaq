@@ -1,28 +1,19 @@
 from typing import List
 
-def minmax_scale(X: List[List[float]]) -> List[List[float]]:
+def kmeans_assign(points: List[List[float]], centroids: List[List[float]]) -> List[int]:
     """
-    Min-max scale each column to [0,1].
-    For column j: (x - min_j) / (max_j - min_j).
-    If max_j == min_j, return zeros for that column.
-    Round each value to 4 decimals.
+    For each point, return the index (0-based) of the nearest centroid by Euclidean distance.
+    Break ties by choosing the smaller centroid index.
     """
-    if not X:
-        return []
-    n = len(X)
-    d = len(X[0]) if X[0] else 0
-    if d == 0:
-        return [[] for _ in range(n)]
-    mins = [float('inf')] * d
-    maxs = [float('-inf')] * d
-    for row in X:
-        for j, v in enumerate(row):
-            if v < mins[j]: mins[j] = v
-            if v > maxs[j]: maxs[j] = v
-    Y = [[0.0] * d for _ in range(n)]
-    for i in range(n):
-        for j in range(d):
-            denom = maxs[j] - mins[j]
-            y = 0.0 if denom == 0 else (X[i][j] - mins[j]) / denom
-            Y[i][j] = float(f"{y:.4f}")
-    return Y
+    if not centroids:
+        return [-1 for _ in points]
+    out: List[int] = []
+    for p in points:
+        best_idx = 0
+        best_d = sum((pi - centroids[0][i])**2 for i, pi in enumerate(p))
+        for j in range(1, len(centroids)):
+            d = sum((pi - centroids[j][i])**2 for i, pi in enumerate(p))
+            if d < best_d or (d == best_d and j < best_idx):
+                best_idx, best_d = j, d
+        out.append(best_idx)
+    return out
